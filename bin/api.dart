@@ -4,30 +4,13 @@ import 'package:shelf/shelf_io.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'dart:convert';
 import 'package:api/db_manager.dart';
+import 'package:api/routers/user_router.dart';
 
 // Configure routes.
-final _router =
-    Router()
-      ..get('/', _rootHandler)
-      ..get('/echo/<message>', _echoHandler)
-      ..get('/users', _usersHandler);
+final _router = Router()..get('/', _rootHandler);
 
 Response _rootHandler(Request req) {
   return Response.ok('Hello, World!\n');
-}
-
-Response _echoHandler(Request request) {
-  final message = request.params['message'];
-  return Response.ok('$message\n');
-}
-
-Future<Response> _usersHandler(Request request) async {
-  DbManager dbManager = DbManager.collection("users");
-  final users = await dbManager.findAll();
-  return Response.ok(
-    json.encode(users),
-    headers: {'Content-Type': 'application/json'},
-  );
 }
 
 void main(List<String> args) async {
@@ -36,7 +19,8 @@ void main(List<String> args) async {
   // Configure a pipeline that logs requests.
   final handler = Pipeline()
       .addMiddleware(logRequests())
-      .addHandler(_router.call);
+      .addHandler(Cascade().add(_router.call).add(userRouter.call).handler);
+
   // For running in containers, we respect the PORT environment variable.
   final port = int.parse(Platform.environment['PORT'] ?? '8010');
   final server = await serve(handler, ip, port);
