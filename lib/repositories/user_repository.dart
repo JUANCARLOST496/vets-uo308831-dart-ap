@@ -20,4 +20,14 @@ class UsersRepository {
     final result = await dbManager.findOne(filter);
     return result;
   }
+
+  static Future<bool> deleteOne(Map<String, dynamic> filter) async {
+    try {
+      final result = await dbManager.deleteOne(filter);
+      return result; // Suponiendo que dbManager.deleteOne devuelve true/false
+    } catch (e) {
+      print("Error al eliminar usuario: $e");
+      return false;
+    }
+  }
 }

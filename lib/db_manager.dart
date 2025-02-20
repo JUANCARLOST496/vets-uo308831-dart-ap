@@ -68,4 +68,17 @@ class DbManager {
     final result = await _collection.findOne(filter);
     return result;
   }
+
+  Future<bool> deleteOne(Map<String, dynamic> filter) async {
+    try {
+      await connect();
+      final result = await _collection.deleteOne(filter);
+      return result.isSuccess;
+    } catch (e) {
+      print("Error al eliminar usuario: $e");
+      return false;
+    } finally {
+      await close();
+    }
+  }
 }

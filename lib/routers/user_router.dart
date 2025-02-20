@@ -12,7 +12,8 @@ final userRouter =
       ..get('/users', _usersHandler)
       ..post('/users/signUp', _signUpHanler)
       ..post('/users/login', _loginHanler)
-      ..get('/users/<id>', _getUserHanler);
+      ..get('/users/<id>', _getUserHanler)
+      ..delete('/users/<id>', _deleteUserHandler);
 
 Future<Response> _loginHanler(Request request) async {
   final credentialRequestBody = await request.readAsString();
@@ -128,5 +129,54 @@ Future<Response> _getUserHanler(Request request) async {
     dynamic userId = ObjectId.fromHexString(request.params['id'].toString());
     final users = await UsersRepository.findOne({"_id": userId});
     return Response.ok(json.encode(users));
+  }
+}
+
+Future<Response> _deleteUserHandler(Request request) async {
+  // Obtener el token del header
+  final String token = request.headers["token"] ?? "";
+
+  // Verificar el token
+  final Map<String, dynamic> verifiedToken = jwt_service
+      .UserTokenService.verifyJwt(token);
+  if (verifiedToken['authorized'] == false) {
+    return Response.unauthorized(
+      json.encode({"message": "Acceso no autorizado", "authorized": false}),
+    );
+  }
+
+  // Obtener el ID del usuario desde la URL
+  final String userId = request.params['id'] ?? "";
+  if (userId.isEmpty) {
+    return Response.badRequest(
+      body: json.encode({"error": "ID de usuario no proporcionado"}),
+    );
+  }
+
+  try {
+    // Convertir el ID a ObjectId
+    final ObjectId objectId = ObjectId.fromHexString(userId);
+
+    // Buscar si el usuario existe
+    final user = await UsersRepository.findOne({"_id": objectId});
+    if (user == null) {
+      return Response.notFound(json.encode({"error": "Usuario no encontrado"}));
+    }
+
+    // Eliminar usuario
+    final result = await UsersRepository.deleteOne({"_id": objectId});
+    if (result) {
+      return Response.ok(
+        json.encode({"message": "Usuario eliminado correctamente"}),
+      );
+    } else {
+      return Response.internalServerError(
+        body: json.encode({"error": "Error al eliminar el usuario"}),
+      );
+    }
+  } catch (e) {
+    return Response.internalServerError(
+      body: json.encode({"error": "ID no válido o error en el servidor"}),
+    );
   }
 }
