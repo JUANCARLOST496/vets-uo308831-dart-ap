@@ -30,4 +30,11 @@ class UsersRepository {
       return false;
     }
   }
+
+  static Future<bool> updateOne(
+    Map<String, dynamic> filter,
+    Map<String, dynamic> updateData,
+  ) async {
+    return await dbManager.updateOne(filter, updateData);
+  }
 }

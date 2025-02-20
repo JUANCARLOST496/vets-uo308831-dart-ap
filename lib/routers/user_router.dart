@@ -13,7 +13,8 @@ final userRouter =
       ..post('/users/signUp', _signUpHanler)
       ..post('/users/login', _loginHanler)
       ..get('/users/<id>', _getUserHanler)
-      ..delete('/users/<id>', _deleteUserHandler);
+      ..delete('/users/<id>', _deleteUserHandler)
+      ..put('/users/<id>', _updateUserHandler);
 
 Future<Response> _loginHanler(Request request) async {
   final credentialRequestBody = await request.readAsString();
@@ -177,6 +178,39 @@ Future<Response> _deleteUserHandler(Request request) async {
   } catch (e) {
     return Response.internalServerError(
       body: json.encode({"error": "ID no válido o error en el servidor"}),
+    );
+  }
+}
+
+Future<Response> _updateUserHandler(Request request) async {
+  final dynamic token =
+      request.headers.containsKey("token") ? request.headers["token"] : "";
+  final Map<String, dynamic> verifiedToken = jwt_service
+      .UserTokenService.verifyJwt(token);
+
+  if (verifiedToken['authorized'] == false) {
+    return Response.unauthorized(json.encode({"message": "Token inválido"}));
+  }
+
+  try {
+    final String userId = request.params['id']!;
+    final requestBody = await request.readAsString();
+    final Map<String, dynamic> updateData = json.decode(requestBody);
+
+    final updated = await UsersRepository.updateOne({
+      "_id": ObjectId.fromHexString(userId),
+    }, updateData);
+
+    if (updated) {
+      return Response.ok(json.encode({"message": "Usuario actualizado"}));
+    } else {
+      return Response.notFound(
+        json.encode({"message": "Usuario no encontrado"}),
+      );
+    }
+  } catch (e) {
+    return Response.internalServerError(
+      body: json.encode({"message": "Error actualizando usuario"}),
     );
   }
 }

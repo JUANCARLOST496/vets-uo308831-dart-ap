@@ -81,4 +81,20 @@ class DbManager {
       await close();
     }
   }
+
+  Future<bool> updateOne(
+    Map<String, dynamic> filter,
+    Map<String, dynamic> updateData,
+  ) async {
+    try {
+      await connect();
+      final result = await _collection.updateOne(filter, {"\$set": updateData});
+      return result.isSuccess;
+    } catch (e) {
+      print("Error al actualizar usuario: $e");
+      return false;
+    } finally {
+      await close();
+    }
+  }
 }
